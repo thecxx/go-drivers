@@ -6,12 +6,12 @@ import (
 )
 
 // New cluster.
-func newCluster(writer *Database, readers ...*Database) (*Cluster, error) {
+func newCluster(writer *Client, readers ...*Client) (*Cluster, error) {
 	return NewCluster(writer, readers...)
 }
 
 func TestCluster_Query(t *testing.T) {
-	d1, err := newDatabase()
+	d1, err := newClient()
 	if err != nil {
 		t.Errorf("New database failed, err=%s\n", err.Error())
 		return

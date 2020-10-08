@@ -6,12 +6,12 @@ import (
 )
 
 // New database.
-func newDatabase() (*Database, error) {
-	return NewDatabase("127.0.0.1:3306", "test", "root", "123456")
+func newClient() (*Client, error) {
+	return NewClient("127.0.0.1:3306", "test", "root", "123456")
 }
 
-func TestDatabase_Query(t *testing.T) {
-	d, err := newDatabase()
+func TestClient_Query(t *testing.T) {
+	d, err := newClient()
 	if err != nil {
 		t.Errorf("New database failed, err=%s\n", err.Error())
 		return

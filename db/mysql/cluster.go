@@ -7,24 +7,24 @@ import (
 )
 
 type Cluster struct {
-	writers []*Database
-	readers []*Database
+	writers []*Client
+	readers []*Client
 	readerp int32
 }
 
-// New cluster with specific databases.
-func NewCluster(writer *Database, readers ...*Database) (*Cluster, error) {
+// New cluster with specific clients.
+func NewCluster(writer *Client, readers ...*Client) (*Cluster, error) {
 	if writer == nil {
-		return nil, errors.New("invalid database for write")
+		return nil, errors.New("invalid client for write")
 	}
 	if len(readers) > 0 {
 		for _, reader := range readers {
 			if reader == nil {
-				return nil, errors.New("invalid database for read")
+				return nil, errors.New("invalid client for read")
 			}
 		}
 	} else {
-		readers = make([]*Database, 0)
+		readers = make([]*Client, 0)
 	}
 	c := new(Cluster)
 	c.writers = append(c.writers, writer)
@@ -71,12 +71,12 @@ func (c *Cluster) Close() {
 }
 
 // Get a database for write.
-func (c *Cluster) writer() *Database {
+func (c *Cluster) writer() *Client {
 	return c.writers[0]
 }
 
-// Get a database for read.
-func (c *Cluster) reader() *Database {
+// Get a client for read.
+func (c *Cluster) reader() *Client {
 	n := len(c.readers)
 	switch {
 	// 1. If no reader

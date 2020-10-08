@@ -47,13 +47,13 @@ func (c *Config) UniqId() string {
 	return fmt.Sprintf("%s://%s/%s", c.Net, c.Addr, c.DBName)
 }
 
-type Database struct {
+type Client struct {
 	db   *sql.DB
 	conf *Config
 }
 
-// New database.
-func NewDatabase(addr, dbname, user, passwd string, options ...DatabaseOptionHandlerFunc) (*Database, error) {
+// New client.
+func NewClient(addr, dbname, user, passwd string, options ...ClientOptionHandlerFunc) (*Client, error) {
 	conf := NewDefaultConfig()
 	conf.Addr = addr
 	conf.DBName = dbname
@@ -65,11 +65,11 @@ func NewDatabase(addr, dbname, user, passwd string, options ...DatabaseOptionHan
 			handler(conf)
 		}
 	}
-	return NewDatabaseWithConfig(conf)
+	return NewClientWithConfig(conf)
 }
 
-// New database with a specific DSN.
-func NewDatabaseWithDSN(dsn string, maxLifetime time.Duration, maxOpenConns, maxIdleConns int) (*Database, error) {
+// New client with a specific DSN.
+func NewClientWithDSN(dsn string, maxLifetime time.Duration, maxOpenConns, maxIdleConns int) (*Client, error) {
 	// Parse DSN
 	cfg, err := driver.ParseDSN(dsn)
 	if err != nil {
@@ -81,11 +81,11 @@ func NewDatabaseWithDSN(dsn string, maxLifetime time.Duration, maxOpenConns, max
 		MaxIdleConns: maxIdleConns,
 		MaxLifetime:  maxLifetime,
 	}
-	return NewDatabaseWithConfig(conf)
+	return NewClientWithConfig(conf)
 }
 
-// New database with a specific config.
-func NewDatabaseWithConfig(conf *Config) (*Database, error) {
+// New client with a specific config.
+func NewClientWithConfig(conf *Config) (*Client, error) {
 	// Open a specific database
 	db, err := sql.Open("mysql", conf.FormatDSN())
 	if err != nil {
@@ -101,20 +101,20 @@ func NewDatabaseWithConfig(conf *Config) (*Database, error) {
 		db.Close()
 		return nil, err
 	}
-	return &Database{db, conf}, nil
+	return &Client{db, conf}, nil
 }
 
 // Query executes a query that returns rows, typically a SELECT.
 // The args are for any placeholder parameters in the query.
-func (d *Database) Query(ctx context.Context, query string, args ...interface{}) (Result, error) {
-	rows, err := d.db.QueryContext(ctx, query, args...)
+func (c *Client) Query(ctx context.Context, query string, args ...interface{}) (Result, error) {
+	rows, err := c.db.QueryContext(ctx, query, args...)
 	return Result{rows: rows}, err
 }
 
 // Exec executes a query without returning any rows.
 // The args are for any placeholder parameters in the query.
-func (d *Database) Exec(ctx context.Context, query string, args ...interface{}) (Result, error) {
-	result, err := d.db.ExecContext(ctx, query, args...)
+func (c *Client) Exec(ctx context.Context, query string, args ...interface{}) (Result, error) {
+	result, err := c.db.ExecContext(ctx, query, args...)
 	return Result{result: result}, err
 }
 
@@ -128,8 +128,8 @@ func (d *Database) Exec(ctx context.Context, query string, args ...interface{}) 
 // The provided TxOptions is optional and may be nil if defaults should be used.
 // If a non-default isolation level is used that the driver doesn't support,
 // an error will be returned.
-func (d *Database) BeginTransaction(ctx context.Context) (*Transaction, error) {
-	tx, err := d.db.BeginTx(ctx, nil)
+func (c *Client) BeginTransaction(ctx context.Context) (*Transaction, error) {
+	tx, err := c.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -138,18 +138,18 @@ func (d *Database) BeginTransaction(ctx context.Context) (*Transaction, error) {
 
 // Ping verifies a connection to the database is still alive,
 // establishing a connection if necessary.
-func (d *Database) Ping(ctx context.Context) error {
-	return d.db.PingContext(ctx)
+func (c *Client) Ping(ctx context.Context) error {
+	return c.db.PingContext(ctx)
 }
 
 // Get the number of connections currently in use.
-func (d *Database) ActiveConns() int {
-	return d.db.Stats().InUse
+func (c *Client) ActiveConns() int {
+	return c.db.Stats().InUse
 }
 
 // Get the number of idle connections.
-func (d *Database) IdleConns() int {
-	return d.db.Stats().Idle
+func (c *Client) IdleConns() int {
+	return c.db.Stats().Idle
 }
 
 // Close closes the database and prevents new queries from starting.
@@ -158,6 +158,6 @@ func (d *Database) IdleConns() int {
 //
 // It is rare to Close a DB, as the DB handle is meant to be
 // long-lived and shared between many goroutines.
-func (d *Database) Close() error {
-	return d.db.Close()
+func (c *Client) Close() error {
+	return c.db.Close()
 }

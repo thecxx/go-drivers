@@ -6,7 +6,7 @@ import (
 )
 
 func TestTransaction_Exec(t *testing.T) {
-	d, err := newDatabase()
+	d, err := newClient()
 	if err != nil {
 		t.Errorf("New database failed, err=%s\n", err.Error())
 		return
