@@ -35,20 +35,34 @@ func NewDefaultConfig() *Config {
 }
 
 type Client struct {
+	*handlers
 	conf   *Config
 	client *driver.Client
 }
 
 // New client.
-func NewClient(addr, passwd string, options ...ClientOptionHandlerFunc) (*Client, error) {
+func NewClient(addr, password string, options ...ClientOptionHandlerFunc) (*Client, error) {
 	conf := NewDefaultConfig()
 	conf.Addr = addr
-	conf.Password = passwd
+	conf.Password = password
 	// Apply options
 	if len(options) > 0 {
 		for _, handler := range options {
 			handler(conf)
 		}
+	}
+	return NewClientWithConfig(conf)
+}
+
+// New client with a specific DSN.
+func NewClientWithDSN(dsn string) (*Client, error) {
+	// Parse DSN
+	opts, err := driver.ParseURL(dsn)
+	if err != nil {
+		return nil, err
+	}
+	conf := &Config{
+		Options: opts,
 	}
 	return NewClientWithConfig(conf)
 }
@@ -63,13 +77,13 @@ func NewClientWithConfig(conf *Config) (*Client, error) {
 		client.Close()
 		return nil, err
 	}
-	return &Client{conf, client}, nil
-}
+	c := &Client{
+		conf:   conf,
+		client: client,
+	}
+	c.handlers = &handlers{client}
 
-// Ping verifies a connection to the cache server is still alive,
-// establishing a connection if necessary.
-func (c *Client) Ping(ctx context.Context) error {
-	return c.client.Ping(ctx).Err()
+	return c, nil
 }
 
 // Close closes the client, releasing any open resources.

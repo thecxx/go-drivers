@@ -3,7 +3,7 @@ package mysql
 import (
 	"context"
 	"errors"
-	atomic2 "sync/atomic"
+	"sync/atomic"
 )
 
 type Cluster struct {
@@ -87,5 +87,5 @@ func (c *Cluster) reader() *Client {
 		return c.readers[0]
 	}
 	// 3. Schedule
-	return c.readers[atomic2.AddInt32(&c.readerp, 1)%int32(n)]
+	return c.readers[atomic.AddInt32(&c.readerp, 1)%int32(n)]
 }
